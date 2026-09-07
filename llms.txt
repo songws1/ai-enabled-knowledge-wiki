@@ -1,0 +1,21 @@
+# AI Enabled Knowledge Wiki
+
+Getting real work done with AI tools at the access tier you actually have.
+
+HOW TO USE THIS FILE. This is a manifest, not the content. Find the one to three
+pages that bear on your question, then fetch only those files. Do not fetch the
+whole repository.
+
+VERIFICATION. Every procedure states how strongly it is backed:
+  vendor-documented = from docs, nobody executed it
+  llm-reviewed      = an AI checked the writing, not the truth of the claim
+  automated         = a test ran and passed
+  human-executed    = a person did it against the live tool
+Report the method when you cite a procedure.
+
+Schema: SCHEMA.md   Routing rules: CLAUDE.md
+
+
+---
+
+0 active pages.
