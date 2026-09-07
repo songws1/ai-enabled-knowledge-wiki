@@ -1,0 +1,42 @@
+# OneDrive / Windows cruft
+# This repo lives inside a OneDrive folder, so these matter more than usual.
+desktop.ini
+Thumbs.db
+ehthumbs.db
+*.lnk
+$RECYCLE.BIN/
+.DS_Store
+
+# OneDrive conflict copies. If two machines sync at once OneDrive creates files
+# like "SCHEMA-DESKTOP-ABC123.md". Never commit those; resolve and delete them.
+*-DESKTOP-*.*
+*-LAPTOP-*.*
+* - Copy.*
+* - Copy (*).*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Node, only if a generator is added later
+node_modules/
+package-lock.json
+
+# Local scratch that should never be published.
+# Anything you are unsure about goes here first.
+scratch/
+*.local.md
+
+# Build output. llms.txt is generated but IS committed, so it is not ignored.
+_site/
+.cache/

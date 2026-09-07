@@ -1,0 +1,48 @@
+name: Validate and regenerate manifest
+
+# Structural validation (Layer 1) runs on every push and PR. It checks schema
+# conformance and referential integrity only. It does NOT check whether content
+# is correct or whether a procedure actually works.
+#
+# On a push to main that passes, llms.txt is regenerated and committed, so the
+# manifest never drifts from the pages.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate structure
+        run: python scripts/validate.py .
+
+      - name: Regenerate llms.txt
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: python scripts/generate_llms_txt.py .
+
+      - name: Commit manifest if it changed
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if [[ -n "$(git status --porcelain llms.txt)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add llms.txt
+            git commit -m "chore: regenerate llms.txt [skip ci]"
+            git push
+          else
+            echo "llms.txt unchanged"
+          fi
