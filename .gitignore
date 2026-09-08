@@ -37,6 +37,14 @@ package-lock.json
 scratch/
 *.local.md
 
+# Files delivered into this folder by the Claude desktop app. These are
+# staging copies handed over for review, not repo content: the real file
+# only counts once it has been copied to its proper path in the repo.
+# Leaving them tracked would put two versions of SCHEMA.md in the repo,
+# which is exactly the confusion this ignore rule prevents.
+Claude outputs/
+"Claude outputs"/
+
 # Build output. llms.txt is generated but IS committed, so it is not ignored.
 _site/
 .cache/

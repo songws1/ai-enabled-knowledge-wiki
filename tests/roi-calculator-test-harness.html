@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Test harness: build-roi-calculator-copilot-free</title>
+</head>
+<body>
+<iframe id="app" src="build-roi-calculator-copilot-free.html" width="640" height="480"></iframe>
+<pre id="log">pending</pre>
+<script>
+(function () {
+  var results = [];
+  function check(name, ok, detail) {
+    results.push((ok ? 'PASS ' : 'FAIL ') + name + (detail !== undefined ? ' :: ' + detail : ''));
+  }
+  window.addEventListener('load', function () {
+    try {
+      var frame = document.getElementById('app');
+      var doc = frame.contentDocument;
+      var win = frame.contentWindow;
+      check('artifact loads in iframe with expected inputs', !!doc && !!doc.getElementById('one-time-cost') && !!doc.getElementById('hours-saved') && !!doc.getElementById('hourly-rate') && !!doc.getElementById('recurring-cost'));
+      if (doc && doc.getElementById('one-time-cost')) {
+        doc.getElementById('one-time-cost').value = '6000';
+        doc.getElementById('hours-saved').value = '300';
+        doc.getElementById('hourly-rate').value = '50';
+        doc.getElementById('recurring-cost').value = '3000';
+        win.calculate();
+        check('annual net benefit is $12,000.00', doc.getElementById('annual-benefit').textContent.trim() === '$12,000.00', JSON.stringify(doc.getElementById('annual-benefit').textContent));
+        check('payback is 6.0 months', doc.getElementById('payback').textContent.trim() === '6.0 months', JSON.stringify(doc.getElementById('payback').textContent));
+        check('year-one ROI is 100.0%', doc.getElementById('roi').textContent.trim() === '100.0%', JSON.stringify(doc.getElementById('roi').textContent));
+        check('artifact exposes global calculate()', typeof win.calculate === 'function');
+        check('artifact has no external src or href references', !/src=|href=/i.test(doc.documentElement.outerHTML));
+      }
+    } catch (e) {
+      check('harness completed without exception', false, String(e));
+    }
+    var pass = results.length > 0 && results.every(function (r) { return r.indexOf('PASS') === 0; });
+    document.body.setAttribute('data-test-result', pass ? 'PASS' : 'FAIL');
+    document.getElementById('log').textContent = 'RESULT: ' + (pass ? 'PASS' : 'FAIL') + '\n' + results.join('\n');
+  });
+})();
+</script>
+</body>
+</html>

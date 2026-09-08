@@ -19,16 +19,24 @@ Most AI guidance assumes you have the paid tier. This wiki starts from the oppos
 
 ## How claims are backed
 
-Every procedure carries a `verification.method` saying how strongly it is backed:
+Every procedure records this on two separate axes, because "the writing was checked" and "the claims are true" are different questions.
 
-| Method | Meaning |
-|---|---|
-| `vendor-documented` | Taken from official docs. Nobody executed it. |
-| `llm-reviewed` | An AI checked the writing for consistency and completeness. Not a check that the claim is true. |
-| `automated` | A test in `tests/` ran and passed. |
-| `human-executed` | A person performed the steps against the live tool and observed the result. |
+**`method` — how strongly the claims are backed:**
 
-Read the method before trusting a page. A well-written procedure that nobody has run is still a well-written procedure that nobody has run.
+| Method | Meaning | Max confidence |
+|---|---|---|
+| `vendor-documented` | Taken from official docs. Nobody executed it. | `low` |
+| `agent-executed` | An LLM agent ran the test and it passed. Nondeterministic: a rerun can differ. | `medium` |
+| `script-verified` | A deterministic test in `tests/` ran and passed. | `high` |
+| `human-executed` | A person performed the steps against the live tool and observed the result. | `high` |
+
+**`reviewed` — whether the writing was checked:** `none`, `llm-reviewed` (an AI checked consistency and completeness), or `human-reviewed` (a person read it and believed it).
+
+A page can be carefully reviewed and completely unverified. That combination is normal for anything needing a live account, and this wiki states it rather than hiding it.
+
+Read the method before trusting a page. A well-written procedure that nobody has run is still a well-written procedure that nobody has run. And when a procedure is tested, read the scope sentence too: a test proves something narrower than the whole procedure, and every tested page says where that edge is.
+
+**`last_reviewed: null` means no human has read the page yet.** Such a page is not stale, because it was never fresh. It is unreviewed, which is the stronger caveat.
 
 ## Contributing
 

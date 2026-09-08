@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ROI and payback calculator</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 32rem; }
+  label { display: block; margin-top: 1rem; font-weight: 600; }
+  input { width: 100%; padding: .4rem; margin-top: .25rem; box-sizing: border-box; }
+  button { margin-top: 1rem; padding: .5rem 1.5rem; }
+  dl { margin-top: 1.5rem; }
+  dt { font-weight: 600; margin-top: .75rem; }
+  dd { margin: .1rem 0 0 0; font-size: 1.1rem; }
+  #notice { color: #a00000; font-weight: 600; min-height: 1.2em; }
+</style>
+</head>
+<body>
+<h1>ROI and payback calculator</h1>
+<p>Enter the cost of an improvement and the labor it saves.</p>
+
+<label for="one-time-cost">One-time implementation cost ($)</label>
+<input id="one-time-cost" type="number" min="0" step="any">
+
+<label for="hours-saved">Hours saved per year</label>
+<input id="hours-saved" type="number" min="0" step="any">
+
+<label for="hourly-rate">Hourly labor rate ($)</label>
+<input id="hourly-rate" type="number" min="0" step="any">
+
+<label for="recurring-cost">Recurring annual software cost ($)</label>
+<input id="recurring-cost" type="number" min="0" step="any">
+
+<button type="button" onclick="calculate()">Calculate</button>
+
+<dl>
+  <dt>Annual net benefit</dt>
+  <dd id="annual-benefit">&mdash;</dd>
+  <dt>Payback period</dt>
+  <dd id="payback">&mdash;</dd>
+  <dt>Year-one ROI</dt>
+  <dd id="roi">&mdash;</dd>
+</dl>
+<p id="notice"></p>
+
+<script>
+function calculate() {
+  var cost = parseFloat(document.getElementById('one-time-cost').value) || 0;
+  var hours = parseFloat(document.getElementById('hours-saved').value) || 0;
+  var rate = parseFloat(document.getElementById('hourly-rate').value) || 0;
+  var recurring = parseFloat(document.getElementById('recurring-cost').value) || 0;
+  var notice = document.getElementById('notice');
+  var net = hours * rate - recurring;
+  if (net <= 0) {
+    document.getElementById('annual-benefit').textContent = '—';
+    document.getElementById('payback').textContent = '—';
+    document.getElementById('roi').textContent = '—';
+    notice.textContent = 'No positive return: the recurring cost is at or above the annual labor savings.';
+    return;
+  }
+  notice.textContent = '';
+  var paybackMonths = cost / (net / 12);
+  var roiPct = cost > 0 ? (net - cost) / cost * 100 : 0;
+  document.getElementById('annual-benefit').textContent =
+    '$' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('payback').textContent = paybackMonths.toFixed(1) + ' months';
+  document.getElementById('roi').textContent =
+    cost > 0 ? roiPct.toFixed(1) + '%' : 'no investment';
+}
+</script>
+</body>
+</html>

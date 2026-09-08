@@ -43,7 +43,7 @@ type:               # tool | pattern | procedure | concept | role | path
 status:             # draft | active | needs-review | deprecated
 owner:              # who is responsible for this page being correct
 created:            # YYYY-MM-DD
-last_reviewed:      # YYYY-MM-DD, when a human last confirmed this page
+last_reviewed:      # YYYY-MM-DD, or null. see 5.3 — null until a HUMAN confirms the page.
 review_cycle_days:  # integer, how long until this page is considered stale
 tags: []            # freeform, lowercase
 ---
@@ -105,7 +105,8 @@ prerequisites: []       # ids of other procedures that must be done first
 est_time_minutes:   # integer
 superseded_by:      # id, only when status is deprecated
 verification:       # see section 5.1. required on every procedure.
-  method:           # automated | llm-reviewed | human-executed | vendor-documented
+  method:           # vendor-documented | agent-executed | script-verified | human-executed
+  reviewed:         # none | llm-reviewed | human-reviewed
   verified_on:      # YYYY-MM-DD
   verified_by:      # script | claude | <person>
   test_artifact:    # path under tests/, or null if none exists
@@ -192,22 +193,52 @@ Do not introduce new relationship names without updating this table. An uncontro
 
 ### 5.1 Verification: what was checked, and how
 
-`verified_on` alone is not enough. A date with no method behind it cannot be audited, because "I read the vendor's documentation" and "I ran these steps and they worked" produce the same date and mean completely different things. Every procedure therefore carries a `verification` block, and `method` is the field that matters most.
+`verified_on` alone is not enough. A date with no method behind it cannot be audited, because "I read the vendor's documentation" and "I ran these steps and they worked" produce the same date and mean completely different things. Every procedure therefore carries a `verification` block.
 
-**The four methods, weakest to strongest:**
+**Evidence and review are two different axes.** An earlier version of this schema folded them into one `method` field, which forced a page that had been carefully reviewed but never executed to be graded either as more verified than it was, or as unreviewed. Both were wrong. They are now separate fields:
 
-| `method` | What it means | Who can do it | Trust it for |
+- `method` answers **how strongly the claims are backed**.
+- `reviewed` answers **whether the writing has been checked**.
+
+A page can be well reviewed and completely unverified. That is the normal state for anything requiring a live account, and the schema must be able to say so.
+
+**`method` — the evidence grade, weakest to strongest:**
+
+| `method` | What it means | Who can set it | Trust it for |
 |---|---|---|---|
 | `vendor-documented` | Derived from official docs. Nobody executed anything. | Agent | A starting draft only |
-| `llm-reviewed` | An agent checked the page for internal consistency, completeness, executable phrasing, and agreement with its `raw/` source | Agent | Quality of the writing, not truth of the claim |
-| `automated` | A test in `tests/` was executed and passed | Script or agent | The specific thing the test covers |
-| `human-executed` | A person performed the steps against the live tool and observed the success condition | Person only | The procedure as a whole |
+| `agent-executed` | An LLM agent ran the procedure's test and it passed. Nondeterministic: a rerun can differ. | Agent | Format and structure conformance, not reliability |
+| `script-verified` | A deterministic test in `tests/` ran and passed. Same input, same result, every time. | Script or agent | Exactly what the test covers, and nothing beyond it |
+| `human-executed` | A person performed the steps against the live tool and observed the success condition | **Person only** | The procedure as a whole |
 
-An agent may set `method` to `vendor-documented`, `llm-reviewed`, or `automated`. **An agent must never set `method: human-executed`.** Only a person may claim that, and claiming it falsely is the failure this whole field exists to prevent.
+`agent-executed` and `script-verified` replace the old single `automated` value, because an LLM run and a deterministic script run are not the same strength of evidence and should never share a grade.
 
-`confidence` is set relative to the method, not independently. A `vendor-documented` procedure is never `high` confidence.
+**An agent must never set `method: human-executed`.** Only a person may claim that. Claiming it falsely is the failure this entire field exists to prevent, and the validator rejects it.
 
-**Where an agent's verification genuinely stops.** Anything requiring a live account, a vendor UI, or a paid tier cannot be verified by an agent. Steps of that kind stay at `vendor-documented` until a person runs them. Do not let a well-written page be mistaken for a verified one.
+**`reviewed` — the quality gate:**
+
+| `reviewed` | What it means |
+|---|---|
+| `none` | Nobody has checked the writing |
+| `llm-reviewed` | An agent checked internal consistency, completeness, executable phrasing, and agreement with the `raw/` source |
+| `human-reviewed` | A person read the page and believed it |
+
+An agent may set `reviewed` to `none` or `llm-reviewed`, never `human-reviewed`.
+
+So the common case from batch 01 — writing carefully checked, claims only vendor-documented, nobody executed anything — is now expressible exactly: `method: vendor-documented`, `reviewed: llm-reviewed`, `confidence: low`.
+
+**Confidence caps.** `confidence` is set relative to `method`, not independently, and `reviewed` never raises it. A reviewed page whose claims nobody tested is still low confidence.
+
+| `method` | Max `confidence` |
+|---|---|
+| `vendor-documented` | `low` |
+| `agent-executed` | `medium` |
+| `script-verified` | `high` |
+| `human-executed` | `high` |
+
+**Scope statements are mandatory on any tested procedure.** A test proves something narrower than the procedure. When `method` is `agent-executed` or `script-verified`, the "How to verify it worked" section must state in one sentence what the test does **not** cover. A page that says `script-verified: high` without naming its scope overstates itself, which is the exact failure this system exists to prevent.
+
+**Where an agent's verification genuinely stops.** Anything requiring a live account, a vendor UI, or a paid tier cannot be verified by an agent. Those stay at `vendor-documented` until a person runs them. Do not let a well-written page be mistaken for a verified one.
 
 ### 5.2 The `tests/` folder
 
@@ -231,8 +262,20 @@ Not every procedure can have a test. A procedure that consists of clicking throu
 
 **Two different dates, and they are not interchangeable.**
 
-- `last_reviewed` means a human read the page and believed it. 
+- `last_reviewed` means a human read the page and believed it.
 - `verification.verified_on` means the procedure was checked by the method named in `verification.method`.
+
+**`last_reviewed` is null until a human reviews the page. Agents must never set it.**
+
+Batch 01 exposed the problem: every page was agent-created and every page carried `last_reviewed` set to its creation date, which made twelve unreviewed pages look reviewed and would have made the staleness calculation lie three months later. A date nobody stands behind is worse than no date, because it silently converts into false assurance.
+
+So an agent creating a page writes `last_reviewed: null`. A person writes the date when they have actually read the page.
+
+Consequences, all intended:
+
+- A page with `last_reviewed: null` is **never stale** — it was never fresh. It is *unreviewed*, which the build reports separately and which is a louder signal, not a quieter one.
+- The unreviewed count is the real backlog of human attention this wiki owes. It should be visible, not hidden behind a creation date.
+- `created` still records when the page appeared, so nothing is lost.
 
 For AI tooling content, `verified_on` decays much faster than `last_reviewed`, because the tool changes underneath a page that nobody touched. Tracking both is the point. In the eventual internal SOP system these correspond to "someone read this SOP" versus "someone walked this process end to end and confirmed the SOP matches reality", which are also routinely confused.
 

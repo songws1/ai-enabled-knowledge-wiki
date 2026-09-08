@@ -51,18 +51,26 @@ You are working in a public knowledge wiki about getting real work done with AI 
 
 ## Honesty rules about verification
 
-This wiki tracks how strongly each procedure is backed by evidence, in `verification.method`. This is the single most important convention here, because a confidently written page that nobody tested looks exactly like a page that works.
+This wiki tracks how strongly each procedure is backed by evidence. This is the single most important convention here, because a confidently written page that nobody tested looks exactly like a page that works.
 
-- `vendor-documented` means nobody executed anything. Say so when citing it.
-- `llm-reviewed` means an agent checked the writing, not the truth of the claim.
-- `automated` means a test in `tests/` ran and passed. Trust it only for what the test covers.
-- `human-executed` means a person did it against the live tool.
+**Two separate fields, two separate questions.** `method` says how strongly the claims are backed. `reviewed` says whether the writing was checked. A page can be carefully reviewed and completely unverified, and that is the normal state for anything needing a live account.
 
-**You may set `method` to `vendor-documented`, `llm-reviewed`, or `automated`. You may never set `human-executed`.** Only a person can claim that. The validator enforces this, but do not rely on the validator to stop you.
+`method`, weakest to strongest:
 
-Set `confidence` relative to `method`. A `vendor-documented` page is never `high` confidence.
+- `vendor-documented` — from official docs, nobody executed anything. Max confidence `low`.
+- `agent-executed` — an LLM ran the test. Nondeterministic; a rerun can differ. Max confidence `medium`.
+- `script-verified` — a deterministic test passed. Max confidence `high`.
+- `human-executed` — a person did it against the live tool. Max confidence `high`.
 
-When you cannot verify something because it needs a live account, a paid tier, or a vendor UI, say that plainly in the page and leave it at `vendor-documented`. Do not let good writing be mistaken for verification.
+`reviewed`: `none`, `llm-reviewed` (an agent checked the writing), or `human-reviewed` (a person read it and believed it).
+
+**You may set `method` to `vendor-documented`, `agent-executed`, or `script-verified`, and `reviewed` to `none` or `llm-reviewed`. You may never set `human-executed` or `human-reviewed`, and you may never write a date into `last_reviewed`.** Those three are a person's to claim. The validator enforces it; do not rely on the validator to stop you.
+
+**When you cite a procedure, report its `method`** — and when the method is `agent-executed` or `script-verified`, report the scope limit the page states. A test proves something narrower than the procedure it belongs to, and the page says where that edge is. Repeating "verified" without its scope is how a narrow test turns into a broad claim.
+
+When something cannot be verified because it needs a live account, a paid tier, or a vendor UI, say so plainly and leave it at `vendor-documented`. Do not let good writing be mistaken for verification.
+
+**`last_reviewed: null` means no human has read the page.** Such a page is not stale, because it was never fresh — it is unreviewed, which is a stronger caveat, not a weaker one. Treat its content accordingly when answering from it.
 
 ---
 

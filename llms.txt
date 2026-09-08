@@ -6,16 +6,72 @@ HOW TO USE THIS FILE. This is a manifest, not the content. Find the one to three
 pages that bear on your question, then fetch only those files. Do not fetch the
 whole repository.
 
-VERIFICATION. Every procedure states how strongly it is backed:
-  vendor-documented = from docs, nobody executed it
-  llm-reviewed      = an AI checked the writing, not the truth of the claim
-  automated         = a test ran and passed
-  human-executed    = a person did it against the live tool
-Report the method when you cite a procedure.
+VERIFICATION. Two separate fields, two separate questions.
+
+  method = how strongly the CLAIMS are backed
+    vendor-documented = from docs, nobody executed it        (confidence: low)
+    agent-executed    = an LLM ran the test, nondeterministic (confidence: max medium)
+    script-verified   = a deterministic test passed           (confidence: max high)
+    human-executed    = a person did it against the live tool (confidence: max high)
+
+  reviewed = whether the WRITING was checked
+    none | llm-reviewed | human-reviewed
+
+A page can be well reviewed and completely unverified. That is the normal state
+for anything needing a live account, and it is stated rather than hidden.
+
+Report the method when you cite a procedure. When the method is agent-executed
+or script-verified, also report the scope limit the page states: a test proves
+something narrower than the procedure it belongs to.
+
+last_reviewed: null means no human has read the page. Such a page is not stale,
+because it was never fresh. It is unreviewed, which is a stronger caveat.
 
 Schema: SCHEMA.md   Routing rules: CLAUDE.md
 
 
+## Tools
+
+One page per tool and access tier.
+
+- `tools/copilot-free.md` — **Microsoft Copilot (free consumer tier)** [UNREVIEWED]: Microsoft Copilot's free consumer tier is a web-based AI chat assistant, available at no cost in a browser, in desktop and mobile apps, and inside Edge.
+
+## Learning paths
+
+Ordered sequences. Start here if unsure where to begin.
+
+- `paths/free-tier-starter.md` — **Free-tier starter path** [UNREVIEWED]: A new ops-analyst — someone with free-tier tooling only who needs to make one recurring task repeatable this week.
+
+## Patterns
+
+Tool-agnostic approaches.
+
+- `patterns/generated-single-file-tool.md` — **Generated single-file tool (the model emits the software)** [intermediate, UNREVIEWED]: A small but real piece of software — a payback calculator, a checklist, a unit converter — would traditionally need a developer, a hosting decision, or admin rights to deploy.
+- `patterns/portable-prompt-template.md` — **Portable prompt template (carry the skill as a file)** [basic, UNREVIEWED]: On a tier with no saved skills, no reusable projects, and no persistent memory worth building on, every run of a recurring task starts from scratch.
+
+## Procedures
+
+Step-by-step, tool-specific. Check verification.method before trusting.
+
+- `procedures/apply-prompt-file-to-data-file.md` — **Apply a prompt file to a data file in one conversation** [intermediate, vendor-documented/low, llm-reviewed, on copilot-free, UNREVIEWED]: Applying a standard check to a new dataset without a saved skill (copilot-free limitation 2) means getting both the instructions and the data into one conversation.
+- `procedures/build-roi-calculator-copilot-free.md` — **Build a single-file ROI calculator with free Copilot** [intermediate, script-verified/high, llm-reviewed, on copilot-free, UNREVIEWED]: The free tier includes no way to build or host an application — copilot-free limitation 1, a web-based general assistant with no development or deployment surface — so generated-si
+- `procedures/create-data-audit-prompt-block.md` — **Create a reusable data-audit prompt block** [basic, agent-executed/medium, llm-reviewed, on copilot-free, UNREVIEWED]: The free tier documents no way to save a reusable skill inside the product (copilot-free limitation 2), so a recurring data-quality review is otherwise re-derived from memory each
+- `procedures/share-prompt-blocks-with-team.md` — **Distribute prompt blocks to a team without a paid tier** [basic, vendor-documented/low, llm-reviewed, on copilot-free, UNREVIEWED]: The free tier has no shared skill library, so a block one person refined stays on that person's machine (copilot-free limitation 2).
+
+## Concepts
+
+How and why things work.
+
+- `concepts/single-file-web-app.md` — **Single-file web app (self-contained HTML)** [basic, UNREVIEWED]: A self-contained HTML file carries its markup, its styling, and its behavior inside one plain-text file, so the page runs when the file is opened in a browser — no server, no insta
+- `concepts/system-prompt.md` — **The system prompt (a fixed instruction block)** [basic, UNREVIEWED]: A system prompt is a block of standing instructions — the role to play, the rules to follow, and the output format to return — placed at the start of a conversation so that every l
+
+## Roles
+
+Who material is written for.
+
+- `roles/ops-analyst.md` — **Operations analyst (free-tier tooling only)** [UNREVIEWED]: Someone who runs recurring operational analysis — quality checks, summaries, small calculations — as part of another job.
+- `roles/team-lead.md` — **Team lead (distributing a method, not doing the task)** [UNREVIEWED]: Someone accountable for how a team performs a recurring operation.
+
 ---
 
-0 active pages.
+12 active pages.

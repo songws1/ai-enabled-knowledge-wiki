@@ -28,9 +28,11 @@ ENTITY_FOLDERS = {
     "paths": "path",
 }
 
+# last_reviewed is deliberately NOT here: it is null until a human reviews the
+# page (schema 5.3). Its presence is checked separately, not its truthiness.
 UNIVERSAL_FIELDS = [
     "id", "title", "type", "status", "owner",
-    "created", "last_reviewed", "review_cycle_days",
+    "created", "review_cycle_days",
 ]
 
 TYPE_FIELDS = {
@@ -44,17 +46,24 @@ TYPE_FIELDS = {
 
 VALID_STATUS = {"draft", "active", "needs-review", "deprecated"}
 VALID_LEVEL = {"basic", "intermediate", "advanced"}
-VALID_METHOD = {"automated", "llm-reviewed", "human-executed", "vendor-documented"}
+VALID_METHOD = {
+    "vendor-documented", "agent-executed", "script-verified", "human-executed",
+}
+VALID_REVIEWED = {"none", "llm-reviewed", "human-reviewed"}
 VALID_CONFIDENCE = {"high", "medium", "low"}
 
-# method -> the highest confidence it may claim
+# method -> the highest confidence it may claim (schema 5.1)
 MAX_CONFIDENCE = {
-    "vendor-documented": "medium",
-    "llm-reviewed": "medium",
-    "automated": "high",
+    "vendor-documented": "low",
+    "agent-executed": "medium",
+    "script-verified": "high",
     "human-executed": "high",
 }
 CONFIDENCE_RANK = {"low": 0, "medium": 1, "high": 2}
+
+# grades only a human may claim, and the machine identities that must not
+AGENT_IDENTITIES = {"claude", "script", "agent", "cline", "codex", "copilot", "gpt"}
+METHODS_NEEDING_A_TEST = {"agent-executed", "script-verified"}
 
 # fields whose values are ids pointing at other pages
 REF_FIELDS_SINGLE = ["tool", "implements", "superseded_by", "target_role"]
@@ -71,6 +80,7 @@ DEFAULT_REVIEW_CYCLE = {
 
 errors = []
 warnings = []
+unreviewed = []   # pages no human has confirmed yet (last_reviewed is null)
 
 
 def err(page, msg):
@@ -237,16 +247,21 @@ def main():
             err(rel, f"invalid level '{level}'")
 
         # dates
-        for date_field in ("created", "last_reviewed"):
-            if data.get(date_field) and not parse_date(data[date_field]):
-                err(rel, f"'{date_field}' is not a valid YYYY-MM-DD date")
+        if data.get("created") and not parse_date(data["created"]):
+            err(rel, "'created' is not a valid YYYY-MM-DD date")
 
-        # staleness is computed, never asserted
-        reviewed = parse_date(data.get("last_reviewed"))
+        # last_reviewed: null until a HUMAN reviews the page (schema 5.3).
+        # Never stale if never reviewed - it is UNREVIEWED, which is louder.
+        lr_raw = data.get("last_reviewed")
         cycle = data.get("review_cycle_days")
-        if reviewed and isinstance(cycle, int):
-            age = (today - reviewed).days
-            if age > cycle:
+        if lr_raw in (None, "", []):
+            unreviewed.append(rel)
+        else:
+            reviewed_date = parse_date(lr_raw)
+            if not reviewed_date:
+                err(rel, "'last_reviewed' must be a YYYY-MM-DD date or null")
+            elif isinstance(cycle, int) and (today - reviewed_date).days > cycle:
+                age = (today - reviewed_date).days
                 warn(rel, f"STALE: reviewed {age}d ago, cycle is {cycle}d")
         if isinstance(cycle, int) and ptype in DEFAULT_REVIEW_CYCLE:
             if cycle > DEFAULT_REVIEW_CYCLE[ptype]:
@@ -265,27 +280,40 @@ def main():
             else:
                 method = v.get("method")
                 conf = v.get("confidence")
+                rev = v.get("reviewed")
+                by = str(v.get("verified_by") or "").strip().lower()
+
                 if method not in VALID_METHOD:
-                    err(rel, f"verification.method '{method}' is invalid")
+                    err(rel, f"verification.method '{method}' is invalid "
+                             f"(valid: {', '.join(sorted(VALID_METHOD))})")
+                if rev not in VALID_REVIEWED:
+                    err(rel, f"verification.reviewed '{rev}' is invalid "
+                             f"(valid: {', '.join(sorted(VALID_REVIEWED))})")
                 if conf not in VALID_CONFIDENCE:
                     err(rel, f"verification.confidence '{conf}' is invalid")
                 if not parse_date(v.get("verified_on")):
                     err(rel, "verification.verified_on is not a valid date")
+
+                # confidence is capped by method; reviewed never raises it
                 if method in MAX_CONFIDENCE and conf in CONFIDENCE_RANK:
                     cap = MAX_CONFIDENCE[method]
                     if CONFIDENCE_RANK[conf] > CONFIDENCE_RANK[cap]:
                         err(rel, f"confidence '{conf}' too high for method "
                                  f"'{method}' (max '{cap}')")
-                # an agent must never claim human execution
-                if method == "human-executed" and v.get("verified_by") in (
-                    "claude", "script", "agent", "cline"
-                ):
-                    err(rel, "verification.method 'human-executed' claimed by a "
-                             "non-human verified_by. only a person may set this.")
-                if method == "automated":
+
+                # grades only a person may claim
+                if method == "human-executed" and by in AGENT_IDENTITIES:
+                    err(rel, f"method 'human-executed' claimed by verified_by "
+                             f"'{by}'. only a person may set this.")
+                if rev == "human-reviewed" and by in AGENT_IDENTITIES:
+                    err(rel, f"reviewed 'human-reviewed' claimed by verified_by "
+                             f"'{by}'. only a person may set this.")
+
+                # an executed grade must point at a test that exists
+                if method in METHODS_NEEDING_A_TEST:
                     ta = v.get("test_artifact")
                     if not ta:
-                        err(rel, "method 'automated' requires a test_artifact")
+                        err(rel, f"method '{method}' requires a test_artifact")
                     elif not (root / ta).exists():
                         err(rel, f"test_artifact '{ta}' does not exist")
 
@@ -346,8 +374,19 @@ def report():
         print(w)
     for e in errors:
         print(e)
+
+    # The human-attention backlog. Not an error: an unreviewed page is a normal
+    # state for agent-created content. It is printed loudly because the whole
+    # point of nulling last_reviewed is that this number stays visible.
+    if unreviewed:
+        print()
+        print(f"UNREVIEWED ({len(unreviewed)}) - no human has confirmed these:")
+        for path in unreviewed:
+            print(f"  - {path}")
+
     print()
-    print(f"{len(errors)} error(s), {len(warnings)} warning(s)")
+    print(f"{len(errors)} error(s), {len(warnings)} warning(s), "
+          f"{len(unreviewed)} unreviewed")
     sys.exit(1 if errors else 0)
 
 

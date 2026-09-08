@@ -1,0 +1,14 @@
+Date,Customer,Region,Amount
+2026-01-05,Acme Corp,North,1200
+05/02/2026, acme corp ,north,"$1,300"
+2026.01.12,Beta LLC,South,950
+2026-01-15,Beta LLC,south,
+2026-01-20,Gamma Inc,East,-500
+2026-01-22,GAMMA INC,East, 750
+2026-01-25,Delta Co,West,"1 100"
+2026-01-28,Delta Co.,WEST,980
+,Acme Corp,North,600
+2026-02-02,Epsilon Ltd,north-east,1400
+2026-02-03,Epsilon Ltd,northeast,1400
+2026-02-10,Zeta & Sons,East,"1,050"
+2026-02-14,Zeta & Sons,East,USD 900

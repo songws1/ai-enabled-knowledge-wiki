@@ -5,7 +5,7 @@ type: tool
 status: draft
 owner: 
 created: 
-last_reviewed: 
+last_reviewed: null
 review_cycle_days: 90
 vendor: 
 tier: 

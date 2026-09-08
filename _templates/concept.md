@@ -5,7 +5,7 @@ type: concept
 status: draft
 owner: 
 created: 
-last_reviewed: 
+last_reviewed: null
 review_cycle_days: 365
 level: 
 related_tools: []
