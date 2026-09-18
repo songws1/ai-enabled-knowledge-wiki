@@ -13,8 +13,8 @@
 ```
 /
   SCHEMA.md          <- this file
-  CLAUDE.md          <- router: tells an agent where things live and how to navigate
-  AGENTS.md          <- copy of CLAUDE.md, for non-Claude agents
+  AGENTS.md          <- router: tells an agent where things live and how to navigate; also points to C:\ai-os\GLOBAL.md
+  CLAUDE.md          <- one-line import (`@AGENTS.md`) so Claude Code loads the same router
   llms.txt           <- generated manifest for cheap remote lookup (do not hand-edit)
   raw/               <- immutable captured sources, never edited after capture
     <slug>.md

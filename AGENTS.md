@@ -8,6 +8,17 @@ You are working in a public knowledge wiki about getting real work done with AI 
 
 ---
 
+## Global context (read first)
+Before any task, also read:
+1. `C:\ai-os\GLOBAL.md`
+2. `C:\ai-os\context\priorities.md`
+3. `C:\ai-os\context\about-business.md` (this is a public learning/business project — do not load `about-work.md` here)
+Follow the routing map in GLOBAL.md for anything not covered by this file or `SCHEMA.md`. Project type: learning/business (public repo).
+
+`CLAUDE.md` in this repo is a one-line import (`@AGENTS.md`) so Claude Code loads this same file. Codex, Antigravity, and other agents read this `AGENTS.md` directly.
+
+---
+
 ## Where things live
 
 | Path | What it holds | Read it when |
